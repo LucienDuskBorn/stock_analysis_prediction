@@ -232,7 +232,7 @@ def fetch_stock_data(symbol, period):
 
             # 获取历史价格数据
             price_data = stock.get_historical_price_data(start_date, end_date, "daily")
-            print(f"price_data:{price_data}")
+            print(f"历史数据price_data:{price_data}")
             # 检查数据是否存在
             if symbol not in price_data or not price_data[symbol]['prices']:
                 print(f"无价格数据: {symbol} {period}")
