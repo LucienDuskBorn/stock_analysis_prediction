@@ -2,6 +2,7 @@
 # pip install dash pandas yahoofinancials plotly scikit-learn ta
 import akshare as ak
 import dash
+from conda.common.compat import NoneType
 from dash import dcc, html, Input, Output, State, dash_table
 import dash_bootstrap_components as dbc
 import pandas as pd
@@ -224,23 +225,20 @@ def fetch_stock_data(symbol, period):
         try:
             # 使用yahoofinancials获取数据
             stock = ak.stock_individual_basic_info_us_xq(symbol)
-            print(stock)
             # 获取日期范围
             start_date, end_date = period_to_date_range(period)
 
             # 获取历史价格数据
-            price_data = ak.stock_us_hist(start_date, end_date, "daily")
-            print(f"历史数据price_data:{price_data}")
+            price_data = ak.stock_us_hist(symbol='105.MSFT', period="daily", start_date=start_date, end_date=end_date, adjust="")
             # 检查数据是否存在
-            if symbol not in price_data or not price_data[symbol]['prices']:
+            if price_data.empty:
                 print(f"无价格数据: {symbol} {period}")
                 return None, None
-
             # 转换数据为DataFrame
-            df = pd.DataFrame(price_data[symbol]['prices'])
+            df = pd.DataFrame(price_data)
 
             # 处理日期并设为索引
-            df['formatted_date'] = pd.to_datetime(df['formatted_date'])
+            df['formatted_date'] = pd.to_datetime(df[1])
             df = df.set_index('formatted_date')
             df.index.name = 'Date'
 
@@ -271,15 +269,16 @@ def fetch_stock_data(symbol, period):
             )
 
             # 获取基本信息
-            summary_data = ak.stock_individual_basic_info_us_xq(symbol)
+            summary_data = ak.stock_individual_basic_info_us_xq(symbol=symbol)
+            print(f"summary_data:{summary_data}")
             #获取股票报价数据
             stock_quote_type_data = stock.get_stock_quote_type_data()
             #获取股票关键数据统计
             key_statistics_data = stock.get_key_statistics_data()
             # 处理基本信息
-            if symbol in summary_data:
-                print("111")
-                stock_info = summary_data[symbol]
+            if summary_data is None:
+
+                stock_info = ""
                 stock_quote_type_data_info = stock_quote_type_data[symbol]
                 key_statistics_data_info = key_statistics_data[symbol]
                 info_df = pd.DataFrame({
