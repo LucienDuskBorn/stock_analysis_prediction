@@ -1,13 +1,12 @@
 # 安装必要库
 # pip install dash pandas yahoofinancials plotly scikit-learn ta
-import os
+import akshare as ak
 import dash
+from conda.common.compat import NoneType
 from dash import dcc, html, Input, Output, State, dash_table
 import dash_bootstrap_components as dbc
 import pandas as pd
 import numpy as np
-from openpyxl.styles.colors import BLACK
-from qtconsole.mainwindow import background
 from yahoofinancials import YahooFinancials
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
@@ -21,7 +20,7 @@ import hashlib
 from pathlib import Path
 import warnings
 from io import StringIO
-
+#api接口地址
 # 忽略Pandas的setitem警告
 warnings.filterwarnings('ignore', category=FutureWarning, message='.*Series.__setitem__.*')
 
@@ -30,7 +29,7 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
 server = app.server
 
 # 默认股票列表
-default_symbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NFLX', 'NVDA', 'JPM', 'V']
+default_symbols = ['AAPL', '105.MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NFLX', 'NVDA', 'JPM', 'V']
 
 # 创建缓存目录
 CACHE_DIR = Path("data_cache")
@@ -226,33 +225,35 @@ def fetch_stock_data(symbol, period):
         try:
             # 使用yahoofinancials获取数据
             stock = YahooFinancials(symbol)
-
+            # stock = ak.stock_individual_basic_info_us_xq(symbol)
             # 获取日期范围
             start_date, end_date = period_to_date_range(period)
 
             # 获取历史价格数据
-            price_data = stock.get_historical_price_data(start_date, end_date, "daily")
-            print(f"历史数据price_data:{price_data}")
+            price_data = ak.stock_us_hist(symbol='105.MSFT', period="daily", start_date=start_date, end_date=end_date, adjust="")
             # 检查数据是否存在
-            if symbol not in price_data or not price_data[symbol]['prices']:
+            if price_data.empty:
                 print(f"无价格数据: {symbol} {period}")
                 return None, None
-
             # 转换数据为DataFrame
-            df = pd.DataFrame(price_data[symbol]['prices'])
+            df = price_data
 
             # 处理日期并设为索引
-            df['formatted_date'] = pd.to_datetime(df['formatted_date'])
-            df = df.set_index('formatted_date')
-            df.index.name = 'Date'
-
+            # 更健壮的写法
+            if '日期' in df.columns:
+                # 直接设置索引并转换日期类型
+                df = df.set_index(pd.to_datetime(df['日期']))
+                df.index.name = 'Date'  # 统一使用英文名称
+            else:
+                print("错误: DataFrame中没有'日期'列")
+                # 可以打印列名以便调试
             # 重命名列以符合ta库要求
             df = df.rename(columns={
-                'open': 'Open',
-                'high': 'High',
-                'low': 'Low',
-                'close': 'Close',
-                'volume': 'Volume'
+                '开盘': 'Open',
+                '最高': 'High',
+                '最低': 'Low',
+                '收盘': 'Close',
+                '成交量': 'Volume'
             })
 
             # 确保所有必需的列都存在
@@ -273,22 +274,24 @@ def fetch_stock_data(symbol, period):
             )
 
             # 获取基本信息
-            summary_data = stock.get_summary_data()
+            summary_data = ak.stock_individual_basic_info_us_xq(symbol)
+            print(f"summary:{summary_data}")
             #获取股票报价数据
             stock_quote_type_data = stock.get_stock_quote_type_data()
             #获取股票关键数据统计
             key_statistics_data = stock.get_key_statistics_data()
             # 处理基本信息
-            if symbol in summary_data:
-                stock_info = summary_data[symbol]
+            if not summary_data.empty:
+                stock_info = summary_data
+                print(f"stock_info:{stock_info}")
                 stock_quote_type_data_info = stock_quote_type_data[symbol]
                 key_statistics_data_info = key_statistics_data[symbol]
                 info_df = pd.DataFrame({
                     '指标': ['公司名称', '行业', '市值', '市盈率', '市净率', '股息率',
                              '52周最高', '52周最低', 'Beta值', '平均成交量'],
                     '值': [
-                        stock_quote_type_data_info.get('longName', 'N/A'),
-                        stock_info.get('sector', 'N/A'),
+                        stock_quote_type_data_info.get('org_name_en', 'N/A'),
+                        stock_info.get('main_operation_business', 'N/A'),
                         f"${stock_info.get('marketCap', 'N/A'):,.0f}" if stock_info.get('marketCap') else 'N/A',
                         stock_info.get('trailingPE', 'N/A'),
                         key_statistics_data_info.get('priceToBook', 'N/A'),
