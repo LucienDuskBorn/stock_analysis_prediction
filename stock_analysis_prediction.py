@@ -1,13 +1,11 @@
 # 安装必要库
 # pip install dash pandas yahoofinancials plotly scikit-learn ta
-import os
+import akshare as ak
 import dash
 from dash import dcc, html, Input, Output, State, dash_table
 import dash_bootstrap_components as dbc
 import pandas as pd
 import numpy as np
-from openpyxl.styles.colors import BLACK
-from qtconsole.mainwindow import background
 from yahoofinancials import YahooFinancials
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
@@ -30,7 +28,7 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
 server = app.server
 
 # 默认股票列表
-default_symbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NFLX', 'NVDA', 'JPM', 'V']
+default_symbols = ['AAPL', '105.MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NFLX', 'NVDA', 'JPM', 'V']
 
 # 创建缓存目录
 CACHE_DIR = Path("data_cache")
@@ -225,13 +223,13 @@ def fetch_stock_data(symbol, period):
     for attempt in range(max_retries):
         try:
             # 使用yahoofinancials获取数据
-            stock = YahooFinancials(symbol)
-
+            stock = ak.stock_individual_basic_info_us_xq(symbol)
+            print(stock)
             # 获取日期范围
             start_date, end_date = period_to_date_range(period)
 
             # 获取历史价格数据
-            price_data = stock.get_historical_price_data(start_date, end_date, "daily")
+            price_data = ak.stock_us_hist(start_date, end_date, "daily")
             print(f"历史数据price_data:{price_data}")
             # 检查数据是否存在
             if symbol not in price_data or not price_data[symbol]['prices']:
@@ -273,13 +271,14 @@ def fetch_stock_data(symbol, period):
             )
 
             # 获取基本信息
-            summary_data = stock.get_summary_data()
+            summary_data = ak.stock_individual_basic_info_us_xq(symbol)
             #获取股票报价数据
             stock_quote_type_data = stock.get_stock_quote_type_data()
             #获取股票关键数据统计
             key_statistics_data = stock.get_key_statistics_data()
             # 处理基本信息
             if symbol in summary_data:
+                print("111")
                 stock_info = summary_data[symbol]
                 stock_quote_type_data_info = stock_quote_type_data[symbol]
                 key_statistics_data_info = key_statistics_data[symbol]

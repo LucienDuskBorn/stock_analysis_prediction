@@ -1,4 +1,4 @@
 import akshare as ak
 
-stock_us_hist_df = ak.stock_us_hist(symbol='MSFT', period="daily", start_date="20250901", end_date="20250910", adjust="")
-print(stock_us_hist_df)
+stock_individual_basic_info_us_xq_df = ak.stock_individual_basic_info_us_xq(symbol="MSFT")
+print(stock_individual_basic_info_us_xq_df)
