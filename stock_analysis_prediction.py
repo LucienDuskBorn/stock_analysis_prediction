@@ -224,8 +224,7 @@ def fetch_stock_data(symbol, period):
     for attempt in range(max_retries):
         try:
             # 使用yahoofinancials获取数据
-            stock = YahooFinancials(symbol)
-            # stock = ak.stock_individual_basic_info_us_xq(symbol)
+            # stock = ak.stock_individual_basic_info_us_xq(symbol,token="da19006a2efb54d17e3a4061a7b6d4302210ab54")
             # 获取日期范围
             start_date, end_date = period_to_date_range(period)
 
@@ -273,33 +272,30 @@ def fetch_stock_data(symbol, period):
                 volume="Volume"
             )
 
-            # 获取基本信息
-            summary_data = ak.stock_individual_basic_info_us_xq(symbol)
-            print(f"summary:{summary_data}")
-            #获取股票报价数据
-            stock_quote_type_data = stock.get_stock_quote_type_data()
-            #获取股票关键数据统计
-            key_statistics_data = stock.get_key_statistics_data()
+            # 获取基本信息,公司名称、行业
+            summary_data = ak.stock_individual_basic_info_us_xq(symbol,token="da19006a2efb54d17e3a4061a7b6d4302210ab54")
+
+            # 获取市值，市盈率
+            market_cap_pe = ak.stock_us_famous_spot_em(symbol='科技类')
+
             # 处理基本信息
             if not summary_data.empty:
-                stock_info = summary_data
-                print(f"stock_info:{stock_info}")
-                stock_quote_type_data_info = stock_quote_type_data[symbol]
-                key_statistics_data_info = key_statistics_data[symbol]
+                market_cap_pe_dict = dict(zip(market_cap_pe['总市值'], market_cap_pe['市盈率']))
+                info_dict = dict(zip(summary_data['item'], summary_data['value']))
                 info_df = pd.DataFrame({
                     '指标': ['公司名称', '行业', '市值', '市盈率', '市净率', '股息率',
                              '52周最高', '52周最低', 'Beta值', '平均成交量'],
                     '值': [
-                        stock_quote_type_data_info.get('org_name_en', 'N/A'),
-                        stock_info.get('main_operation_business', 'N/A'),
-                        f"${stock_info.get('marketCap', 'N/A'):,.0f}" if stock_info.get('marketCap') else 'N/A',
-                        stock_info.get('trailingPE', 'N/A'),
-                        key_statistics_data_info.get('priceToBook', 'N/A'),
-                        f"{stock_info.get('dividendRate', 0) * 100:.2f}%" if stock_info.get('dividendRate') else '0%',
-                        f"${stock_info.get('fiftyTwoWeekHigh', 'N/A'):,.2f}",
-                        f"${stock_info.get('fiftyTwoWeekLow', 'N/A'):,.2f}",
-                        stock_info.get('beta', 'N/A'),
-                        f"{stock_info.get('averageVolume', 'N/A'):,.0f}" if stock_info.get('averageVolume') else 'N/A'
+                        info_dict['org_name_en'],
+                        info_dict.get('main_operation_business', 'N/A'),
+                        info_dict.get('marketCap', 'N/A'),
+                        info_dict.get('trailingPE', 'N/A'),
+                        info_dict.get('priceToBook', 'N/A'),
+                        info_dict.get('dividendRate', 0) ,
+                        info_dict.get('fiftyTwoWeekHigh', 'N/A'),
+                        info_dict.get('fiftyTwoWeekLow', 'N/A'),
+                        info_dict.get('beta', 'N/A'),
+                        info_dict.get('averageVolume', 'N/A')
                     ]
                 })
             else:

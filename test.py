@@ -1,5 +1,5 @@
 import akshare as ak
-import pandas as pd
-import requests
-stock_individual_basic_info_us_xq_df = ak.stock_individual_basic_info_us_xq("NVDA")
-print(stock_individual_basic_info_us_xq_df)
+
+stock_news_em_df = ak.stock_news_em(symbol="06936")
+stock_news_em_df.to_csv("C:\\D\\pythonWork\\stock_analysis_prediction\\data_cache\stock_news_em_df.csv")
+print(stock_news_em_df)
