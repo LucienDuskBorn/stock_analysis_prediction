@@ -75,7 +75,8 @@ app.layout = dbc.Container([
                                     {'label': '最大范围', 'value': 'max'}
                                 ],
                                 value='1y',
-                                clearable=False
+                                clearable=False,
+                                style={'color': 'black'}
                             )
                         ], width=6)
                     ]),
@@ -277,7 +278,13 @@ def fetch_stock_data(symbol, period):
 
             # 获取市值，市盈率
             market_cap_pe = ak.stock_us_famous_spot_em(symbol='科技类')
-
+            print(market_cap_pe)
+            market_cap = 0
+            trailing_pe = 0
+            for index,row in market_cap_pe.iterrows():
+                if row['代码'].find('NVDA')!= -1:
+                    market_cap = row[9]
+                    trailing_pe = row[10]
             # 处理基本信息
             if not summary_data.empty:
                 market_cap_pe_dict = dict(zip(market_cap_pe['总市值'], market_cap_pe['市盈率']))
@@ -288,8 +295,8 @@ def fetch_stock_data(symbol, period):
                     '值': [
                         info_dict['org_name_en'],
                         info_dict.get('main_operation_business', 'N/A'),
-                        info_dict.get('marketCap', 'N/A'),
-                        info_dict.get('trailingPE', 'N/A'),
+                        market_cap,
+                        trailing_pe,
                         info_dict.get('priceToBook', 'N/A'),
                         info_dict.get('dividendRate', 0) ,
                         info_dict.get('fiftyTwoWeekHigh', 'N/A'),
