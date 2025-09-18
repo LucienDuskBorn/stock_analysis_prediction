@@ -229,15 +229,20 @@ def fetch_stock_data(symbol, period):
             # 获取日期范围
             start_date, end_date = period_to_date_range(period)
 
+            #获取美股代码
+            us_code=ak.stock_us_spot_em()
+            for index,row in us_code.iterrows():
+                if row[""].find(symbol) != -1:
+                    symbol = row[15]
             # 获取历史价格数据
-            price_data = ak.stock_us_hist(symbol='105.MSFT', period="daily", start_date=start_date, end_date=end_date, adjust="")
+            price_data = ak.stock_us_hist(symbol=symbol, period="daily", start_date=start_date, end_date=end_date, adjust="")
             # 检查数据是否存在
             if price_data.empty:
                 print(f"无价格数据: {symbol} {period}")
                 return None, None
             # 转换数据为DataFrame
             df = price_data
-
+            print(f"df:{df}")
             # 处理日期并设为索引
             # 更健壮的写法
             if '日期' in df.columns:
@@ -347,7 +352,7 @@ def train_prediction_model(df, forecast_days):
             'volume_obv']
         #过滤数据为NaN的数据,数据为NaN的删除行
         data = data.dropna(axis=0,subset=key_columns)
-        data.to_csv(f"C:\\D\\stock\\data\\data2025.csv",index=False)
+
         # 检查数据量是否足够
         min_samples = max(20, forecast_days * 2)  # 至少20个样本或预测天数的2倍
 
